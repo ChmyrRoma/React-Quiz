@@ -31,7 +31,7 @@ const Main = () => {
       <SearchQuiz />
       <div className="flex justify-end mt-10">
         <Link to="/create-quiz">
-          <button className="p-2 bg-gray-200 rounded-md font-serif border hover:bg-gray-300">Create Quiz</button>
+          <button className="p-2 hover:bg-slate-200 bg-slate-100 rounded-md select-none font-serif">Create Quiz</button>
         </Link>
       </div>
       <hr className="mt-3" />
