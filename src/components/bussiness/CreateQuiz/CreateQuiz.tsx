@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useForm, SubmitHandler } from 'react-hook-form';
-import { Link } from 'react-router-dom';
 import classNames from 'classnames';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -25,14 +25,35 @@ interface IFormInput {
   title: string
 }
 
+export interface ICorrectAnswer {
+  value: string
+  status: boolean | null
+}
+
 const CreateQuiz = () => {
   const [questionsArr, setQuestionsArr] = useState<IQuestion[]>([
     { question: '', type: 'answer', answers: [{ answer1: '' }], correctAnswer: '' }
   ]);
+  const [correctAnswers, setCorrectAnswers] = useState<ICorrectAnswer[]>([
+    { value: '', status: null }
+  ]);
+  const [currentSelectType, setCurrentSelectType] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<IFormInput>();
+  const navigate = useNavigate();
+
+
+  useEffect(() => {
+    if (isLoading) {
+      navigate('/');
+    }
+  }, [() => onSubmit()]);
 
   const onSubmit: SubmitHandler<IFormInput> = (data) => {
+    const allCorrectAnswersSet = correctAnswers.every(answer => answer.status === true);
+    if (!allCorrectAnswersSet && currentSelectType !== 'inputField') return;
+
     const newQuiz: IQuiz = {
       id: Date.now(),
       title: data.title,
@@ -45,6 +66,8 @@ const CreateQuiz = () => {
 
     setValue('title', '');
     setQuestionsArr([{ question: '', type: 'answer', answers: [{ answer1: '' }], correctAnswer: '' }]);
+    setCorrectAnswers([{ value: '', status: null }]);
+    setIsLoading(true);
   };
 
   const onInputChange = (questionIndex: number, field: keyof IQuestion, value: string) => {
@@ -58,12 +81,22 @@ const CreateQuiz = () => {
       ...questionsArr,
       { question: '', type: 'answer', answers: [{ answer1: '' }], correctAnswer: '' }
     ]);
+    setCorrectAnswers([
+      ...correctAnswers,
+      { value: '', status: null }
+    ]);
   };
 
   const onDeleteQuestion = (index: number) => {
     if (questionsArr.length > 1) {
       setQuestionsArr(questionsArr.filter((_, i) => i !== index));
     }
+  };
+
+  const onCorrectAnswerChange = (questionIndex: number, answer: ICorrectAnswer) => {
+    const newCorrectAnswers = [...correctAnswers];
+    newCorrectAnswers[questionIndex] = answer;
+    setCorrectAnswers(newCorrectAnswers);
   };
 
   return (
@@ -107,6 +140,9 @@ const CreateQuiz = () => {
             onDeleteQuestion={() => onDeleteQuestion(index)}
             register={register}
             errors={errors}
+            correctAnswer={correctAnswers[index]}
+            setCorrectAnswer={(answer) => onCorrectAnswerChange(index, answer)}
+            setCurrentSelectType={setCurrentSelectType}
           />
         ))}
         <button

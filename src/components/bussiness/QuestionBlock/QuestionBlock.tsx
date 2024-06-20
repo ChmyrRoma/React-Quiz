@@ -7,7 +7,7 @@ import { UseFormRegister, FieldErrors } from 'react-hook-form';
 
 import CustomSelect from '../../shared/CustomSelect/CustomSelect';
 import QuizAnswersBlock from '../QuizAnswerBlock/QuizAnswerBlock';
-import { IQuestion } from '../CreateQuiz/CreateQuiz';
+import { ICorrectAnswer, IQuestion } from '../CreateQuiz/CreateQuiz';
 
 interface IQuestionBlockProps {
   questionIndex: number
@@ -17,6 +17,9 @@ interface IQuestionBlockProps {
   onDeleteQuestion: () => void
   register: UseFormRegister<any>
   errors: FieldErrors<any>
+  correctAnswer: ICorrectAnswer;
+  setCorrectAnswer: (value: ICorrectAnswer) => void;
+  setCurrentSelectType: (type: string) => void
 }
 
 export interface ISelectedProps {
@@ -25,10 +28,12 @@ export interface ISelectedProps {
 }
 
 const QuestionBlock: React.FC<IQuestionBlockProps> = ({
-  questionIndex, question, onQuestionChange, questionsLength, onDeleteQuestion, register, errors
+  questionIndex, question, onQuestionChange, questionsLength, onDeleteQuestion,
+  register, errors, correctAnswer, setCorrectAnswer, setCurrentSelectType
 }) => {
   const [isSelectOpen, setIsSelectOpen] = useState<boolean>(false);
   const [selectOption, setSelectOption] = useState<string>(question.type);
+  const [isCorrectAnswer, setIsCorrectAnswer] = useState<boolean>(false);
   const [selectedArr] = useState<ISelectedProps[]>([
     { option: 'An arbitrary input field', value: 'inputField' },
     { option: 'Ready answers', value: 'answer' }
@@ -37,7 +42,15 @@ const QuestionBlock: React.FC<IQuestionBlockProps> = ({
   useEffect(() => {
     const answerType = question.type === 'answer' ? 'Ready answers' : question.type === 'inputField' ? 'An arbitrary input field' : 'Ready answers';
     setSelectOption(answerType);
-  }, [question.type, question.answers]);
+  }, [() => {
+    question.type;
+    question.answers;
+    handleSelect();
+  }]);
+
+  useEffect(() => {
+    setCurrentSelectType(question.type);
+  }, [question.type]);
 
   const handleSelectOpen = () => {
     setIsSelectOpen(!isSelectOpen);
@@ -48,10 +61,24 @@ const QuestionBlock: React.FC<IQuestionBlockProps> = ({
     setIsSelectOpen(false);
     if (value === 'inputField') {
       onQuestionChange('answers', []);
+      setCorrectAnswer({ value: '', status: null });
     } else if (question.answers.length === 0) {
       onQuestionChange('answers', [{ answer1: '' }]);
     }
     onQuestionChange('type', value);
+  };
+
+  const handleSelectCorrectAnswer = (value: React.MouseEvent<HTMLDivElement>) => {
+    const answerValue = value.target?.value;
+    if (!answerValue) {
+      setCorrectAnswer({ value: 'You cannot select an empty field', status: false });
+      onQuestionChange('correctAnswer', '');
+      setIsCorrectAnswer(false);
+      return;
+    }
+    onQuestionChange('correctAnswer', answerValue);
+    setCorrectAnswer({ value: `You choose the correct answer: ${answerValue}`, status: true });
+    setIsCorrectAnswer(false);
   };
 
   const onAddAnswer = () => {
@@ -114,7 +141,7 @@ const QuestionBlock: React.FC<IQuestionBlockProps> = ({
             handleSelect={(option, value) => handleSelect(option, value)}
           />
         </div>
-        {selectOption !== 'inputField' && (
+        {question.type !== 'inputField' && (
           <>
             {question.answers.map((answerObj, answerIndex) => {
               const answerKey = `answer${answerIndex + 1}`;
@@ -126,13 +153,33 @@ const QuestionBlock: React.FC<IQuestionBlockProps> = ({
                   answerKey={answerKey}
                   answer={answerObj[answerKey]}
                   answersLength={question.answers.length}
+                  isCorrectAnswer={isCorrectAnswer}
                   register={register}
                   errors={errors}
                   onInputChange={(value) => onInputChange(answerIndex, value)}
                   onDeleteAnswer={() => onDeleteAnswer(answerIndex)}
+                  handleSelect={handleSelectCorrectAnswer}
                 />
               );
             })}
+            <div className={classNames("my-3 py-2", {["border-t"]: !isCorrectAnswer})}>
+              {!isCorrectAnswer && (
+                <div
+                  className="text-center my-2 hover:cursor-pointer py-1 hover:bg-slate-200 bg-slate-100 rounded-md"
+                  onClick={() => setIsCorrectAnswer(!isCorrectAnswer)}
+                >
+                  {correctAnswer.status ? 'Change correct answer' : 'Select correct answer'}
+                </div>
+              )}
+              <div
+                className={classNames(
+                  {["text-red-400"]: !correctAnswer.status},
+                  {["text-green-500"]: correctAnswer.status}
+                )}
+              >
+                {correctAnswer.value}
+              </div>
+            </div>
             <div className="text-end">
               <button
                 onClick={onAddAnswer}
