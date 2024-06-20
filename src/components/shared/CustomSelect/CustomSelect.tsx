@@ -2,26 +2,27 @@ import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleDown, faAngleUp } from '@fortawesome/free-solid-svg-icons';
 
-import { ISelectedProps } from '../../bussiness/CreateQuiz/CreateQuiz';
+import { ISelectedProps } from '../../bussiness/QuestionBlock/QuestionBlock';
 
 interface IProps {
-  isOpen: boolean
-  handleSelectOpen: () => void
-  selectValue: string
-  defaultValue: string
-  selectedValue: ISelectedProps[]
-  handleSelect: (event: React.MouseEvent<HTMLDivElement>) => void
+  isOpen: boolean;
+  handleSelectOpen: () => void;
+  selectOption: string;
+  defaultValue: string;
+  selectedValue: ISelectedProps[];
+  handleSelect: (option: string, value: string) => void;
 }
 
-
-const CustomSelect = ({ isOpen, handleSelectOpen, selectValue, defaultValue, selectedValue, handleSelect}: IProps) => {
+const CustomSelect: React.FC<IProps> = ({
+ isOpen, handleSelectOpen, selectOption, defaultValue, selectedValue, handleSelect
+}) => {
   return (
     <div
       onClick={handleSelectOpen}
       className="relative border outline-none w-full py-1 my-2 rounded-md hover:cursor-pointer"
     >
       <div className="flex justify-between items-center px-1">
-        <p className="select-none">{selectValue || defaultValue}</p>
+        <p className="select-none">{selectOption || defaultValue}</p>
         {isOpen ? (
           <FontAwesomeIcon icon={faAngleUp} fontSize="small" />
         ) : (
@@ -29,12 +30,12 @@ const CustomSelect = ({ isOpen, handleSelectOpen, selectValue, defaultValue, sel
         )}
       </div>
       {isOpen && (
-        <div className="absolute border bg-white w-full h-content rounded-b">
-          {selectedValue.map(el => (
+        <div className="absolute border bg-white w-full h-content rounded-b z-10">
+          {selectedValue.map((el, index) => (
             <div
-              key={el.value}
+              key={index}
               className="font-sans text-base p-1 hover:bg-blue-400 hover:text-white my-1"
-              onClick={(event) => handleSelect(event)}
+              onClick={() => handleSelect(el.option, el.value)}
             >
               {el.option}
             </div>
@@ -42,7 +43,7 @@ const CustomSelect = ({ isOpen, handleSelectOpen, selectValue, defaultValue, sel
         </div>
       )}
     </div>
-  )
-}
+  );
+};
 
 export default CustomSelect;
